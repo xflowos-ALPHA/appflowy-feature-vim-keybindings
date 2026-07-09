@@ -11,8 +11,13 @@ class VimPlugin {
   KeyEventResult onKey(EditorState editorState, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
+    // Proactively revert to normal mode if editor is read-only
+    if (!editorState.editable && _mode != VimMode.normal) {
+      _updateMode(editorState, VimMode.normal);
+    }
+
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      _mode = VimMode.normal;
+      _updateMode(editorState, VimMode.normal);
       return KeyEventResult.handled;
     }
 
@@ -23,9 +28,17 @@ class VimPlugin {
     return KeyEventResult.ignored;
   }
 
+  void _updateMode(EditorState editorState, VimMode newMode) {
+    if (newMode == VimMode.insert && !editorState.editable) {
+      // Don't enter insert mode if editor is read-only
+      return;
+    }
+    _mode = newMode;
+  }
+
   KeyEventResult _handleNormalMode(EditorState editorState, KeyDownEvent event) {
     if (event.logicalKey == LogicalKeyboardKey.keyI) {
-      _mode = VimMode.insert;
+      _updateMode(editorState, VimMode.insert);
       return KeyEventResult.handled;
     }
 
